@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>
+    DeALs NLP Test
+  </title>
+  <link rel='stylesheet' href='/stylesheets/style.css' />
+
+  <link rel='stylesheet' href='https://bootswatch.com/4/flatly/bootstrap.min.css' />
+
+  <script src="https://ajax.aspnetcdn.com/ajax/jQuery/jquery-3.3.1.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+  <script src="https://unpkg.com/compromise@latest/builds/compromise.min.js"></script>
+</head>
+
+<body>
+  <p>Welcome to the DeALs shallow NLP tester.
+  </p>
+
+  <!-- Development Env. for the shallow NLP  -->
+  <div class="container-fluid">
+    Start the sentence with "Write a rule to ..."
+    <div class="row">
+      <textarea class="form-control" id="sentenceInput">Write a rule to do something here!</textarea>
+    </div>
+    <br>
+    <div class="row justify-content-center">
+      <button type="button" id="parseSentence" class="btn btn-info">parseSentence</button>
+    </div>
+    <br>
+    <div class="row">
+      <textarea class="form-control" id="nlpOutput">Shallow NLP output</textarea>
+    </div>
+  </div>
+
+  <script>
+    $(function () {
+      //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+      //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+      //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+      /*
+      * Experimental NLP Code
+      */
+
+      $('#parseSentence').click(function () {
+        event.preventDefault();
+        let sentence = $('#sentenceInput').val();
+
+        // Sentence must start with "Write a rule to"
+        let learnedSentence = nlp(sentence);
+        if (learnedSentence.match('^Write a rule to').found) {
+          var str = learnedSentence.out('terms');
+          console.log(str);
+
+          $('#nlpOutput').val(JSON.stringify(str));
+        }
+        else {
+          alert('The sentence must start with \'Write a rule to\'');
+        }
+        //var str = doc.nouns().toPlural().out('text');
+      });
+
+    });
+  </script>
+
+</body>
+
+</html>
