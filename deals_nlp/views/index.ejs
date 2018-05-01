@@ -22,7 +22,7 @@
   <div class="container-fluid">
     Start the sentence with "Write a rule to ..."
     <div class="row">
-      <textarea class="form-control" id="sentenceInput">Write a rule to do something here!</textarea>
+      <textarea class="form-control" id="sentenceInput" onkeyup="keyUpListener();" rows="2">Write a rule to do something here!</textarea>
     </div>
     <br>
     <div class="row justify-content-center">
@@ -30,11 +30,19 @@
     </div>
     <br>
     <div class="row">
-      <textarea class="form-control" id="nlpOutput">Shallow NLP output</textarea>
+      <textarea class="form-control" id="nlpOutput" rows="20">Shallow NLP output</textarea>
     </div>
   </div>
 
   <script>
+
+    function keyUpListener() {
+      var key = event.hasOwnProperty('which') ? event.which : event.keyCode;
+      if ($('#sentenceInput').val().startsWith("Write a rule to")) {
+        $('#parseSentence').click();
+      }
+    }
+
     $(function () {
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -48,10 +56,12 @@
         let sentence = $('#sentenceInput').val();
 
         // Sentence must start with "Write a rule to"
-        let learnedSentence = nlp(sentence);
-        if (learnedSentence.match('^Write a rule to').found) {
+        if (sentence.startsWith("Write a rule to")) {
+          sentence = sentence.replace("Write a rule to", "");
+          let learnedSentence = nlp(sentence).match('(get|grab|search|find|pull|obtain|pick) the [#Noun]');
+
           var str = learnedSentence.out('terms');
-          console.log(str);
+          //console.log(str);
 
           $('#nlpOutput').val(JSON.stringify(str));
         }
