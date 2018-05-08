@@ -30,7 +30,13 @@
     </div>
     <br>
     <div class="row">
-      <textarea class="form-control" id="nlpOutput" rows="20">Shallow NLP output</textarea>
+      <textarea class="form-control" id="nlpOutput" rows="12">Shallow NLP output</textarea>
+    </div>
+    <br>
+    <br> List of Databases:
+    <div class="row">
+      <ul class="list-group" id="databaseList">
+      </ul>
     </div>
   </div>
 
@@ -43,6 +49,29 @@
       }
     }
 
+    class nounClause {
+      constructor(value, type) {
+        this.value = value;
+        this.type = type;
+      }
+    }
+
+    class verbClause {
+      constructor(value, type) {
+        this.value = value;
+        this.type = type;
+      }
+    }
+
+    class dBs {
+      constructor(name, args) {
+        this.name = name;
+        this.args = args;
+      }
+    }
+
+    let listDbs = [ new dBs('paper', [ 'id', 'title', 'author', 'conference', 'year' ]), new dBs('test', [ 'x', 'y' ]) ];
+
     $(function () {
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -51,6 +80,21 @@
       * Experimental NLP Code
       */
 
+      let $dbList = $('#databaseList');
+      let dbNameSet = new Set();
+      listDbs.forEach(db => {
+        dbNameSet.add(db.name);
+        let str = db.name + ' (';
+        db.args.forEach(arg => {
+          str = str + arg + ', ';
+        })
+        str = str.substring(0, str.length - 2) + ')';
+        //$dbList.val($dbList.val() + str + '\n');
+        let ruleString = `<li class="ruleList list-group-item d-flex justify-content-between align-items-center">
+            ${str} </li>\n`
+        $dbList.append(ruleString);
+      });
+
       $('#parseSentence').click(function () {
         event.preventDefault();
         let sentence = $('#sentenceInput').val();
@@ -58,9 +102,10 @@
         // Sentence must start with "Write a rule to"
         if (sentence.startsWith("Write a rule to")) {
           sentence = sentence.replace("Write a rule to", "");
-          let learnedSentence = nlp(sentence).match('(get|grab|search|find|pull|obtain|pick) the [#Noun]');
+          let grabNoun = nlp(sentence).match('(get|grab|search|find|pull|obtain|pick) * [#Noun] * #Noun?');
 
-          var str = learnedSentence.out('terms');
+          // rule barrier = of, from, having
+          var str = grabNoun.out('terms');
           //console.log(str);
 
           $('#nlpOutput').val(JSON.stringify(str));
@@ -68,8 +113,9 @@
         else {
           alert('The sentence must start with \'Write a rule to\'');
         }
-        //var str = doc.nouns().toPlural().out('text');
       });
+
+
 
     });
   </script>
