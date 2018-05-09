@@ -73,13 +73,10 @@
     let listDbs = [ new dBs('paper', [ 'id', 'title', 'author', 'conference', 'year' ]), new dBs('test', [ 'x', 'y' ]) ];
 
     $(function () {
-      //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-      //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-      //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-      /*
-      * Experimental NLP Code
-      */
 
+      /*
+      * Populate the DB List for the user to see what the valid databases are.
+      */
       let $dbList = $('#databaseList');
       let dbNameSet = new Set();
       listDbs.forEach(db => {
@@ -95,6 +92,12 @@
         $dbList.append(ruleString);
       });
 
+      //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+      //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+      //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+      /*
+      * Experimental NLP Code
+      */
       $('#parseSentence').click(function () {
         event.preventDefault();
         let sentence = $('#sentenceInput').val();
@@ -102,20 +105,54 @@
         // Sentence must start with "Write a rule to"
         if (sentence.startsWith("Write a rule to")) {
           sentence = sentence.replace("Write a rule to", "");
-          let grabNoun = nlp(sentence).match('(get|grab|search|find|pull|obtain|pick) * [#Noun] * #Noun?');
+          let grabNoun = nlp(sentence).match('(get|grab|search|find|pull|obtain|pick) * [#Noun]');
+          let deleteString = nlp(sentence).match('(get|grab|search|find|pull|obtain|pick) * #Noun');
+          let $outputval = $('#nlpOutput');
+          // only if there is an eligible noun should processing start
+          if (grabNoun.text() != "") {
+            var str = grabNoun.out('terms');
+            $outputval.val(JSON.stringify(str));
 
-          // rule barrier = of, from, having
-          var str = grabNoun.out('terms');
-          //console.log(str);
+            let nounSet = new Set();
+            nounSet.add(new nounClause(grabNoun.text().charAt(1).toUpperCase() + grabNoun.text().slice(2), 'head')); // add the found noun as a head variable
 
-          $('#nlpOutput').val(JSON.stringify(str));
+            let endHeadParsing = false;
+            sentence = sentence.replace(deleteString.text(), "");
+
+            // Only if there is a having or of or from in the text should it do the rest of the head parsing 
+            if (nlp(sentence).match('* (having|of|from)').text() != "") {
+              while (!endHeadParsing) {
+                if (sentence == "") {
+                  endHeadParsing = true;
+                }
+                grabNoun = nlp(sentence).match('* [#Noun] * (having|of|from)');
+                if (grabNoun.text() != "") {
+                  deleteString = sentence.substring(0, sentence.indexOf(grabNoun.text()) + 1);
+                  str = grabNoun.out('terms');
+                  nounSet.add(new nounClause(grabNoun.text().charAt(1).toUpperCase() + grabNoun.text().slice(2), 'head'));
+                  $outputval.val($outputval.val() + ", " + JSON.stringify(str));
+                  sentence = sentence.replace(deleteString, "");
+                }
+                else {
+                  endHeadParsing = true;
+                }
+              }
+
+              // Now the head is done being constructed, so print out the head string for the query
+              let constructedHeadString = 'query(';
+              for (let noun of nounSet) {
+                if (noun.type == "head")
+                  constructedHeadString = constructedHeadString + noun.value + ", ";
+              }
+              constructedHeadString = constructedHeadString.substring(0, constructedHeadString.length - 2) + ') -> ';
+              $outputval.val(constructedHeadString);
+            }
+          }
         }
         else {
           alert('The sentence must start with \'Write a rule to\'');
         }
       });
-
-
 
     });
   </script>
