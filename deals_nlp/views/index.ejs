@@ -15,7 +15,7 @@
 </head>
 
 <body>
-  <p>Welcome to the DeALs shallow NLP tester.
+  <p>Welcome to the DeALs shallow NLP parser.
   </p>
 
   <!-- Development Env. for the shallow NLP  -->
@@ -36,6 +36,34 @@
     <br> List of Databases:
     <div class="row">
       <ul class="list-group" id="databaseList">
+      </ul>
+    </div>
+    <br>
+    <br> Example Queries:
+    <div class="row">
+      <ul class="list-group" id="queryExamples">
+        <li class="ruleList list-group-item d-flex justify-content-between align-items-center">
+          Write a rule to &nbsp;
+          <span style="color: green"> get </span> &nbsp; the &nbsp;
+          <span style="color: red">names</span> &nbsp; of authors who have published at least one&nbsp;
+          <span style="color: blue">paper</span> &nbsp;in the &nbsp;
+          <span style="color: red">conference</span>&nbsp;.
+        </li>
+        <li class="ruleList list-group-item d-flex justify-content-between align-items-center">
+          Write a rule to &nbsp;
+          <span style="color: green">grab</span> &nbsp; the &nbsp;
+          <span style="color: red">title</span> &nbsp; and &nbsp;
+          <span style="color: red">author</span> &nbsp; of those who have published a &nbsp;
+          <span style="color: blue">paper</span> &nbsp;in the &nbsp;
+          <span style="color: red">ACM conference</span>.
+        </li>
+        <li class="ruleList list-group-item d-flex justify-content-between align-items-center">
+          Write a rule &nbsp;
+          <span style="color: green">find</span> &nbsp;the&nbsp;
+          <span style="color: red">id </span> &nbsp;of authors who have published&nbsp;
+          <span style="color: red">at least five</span>&nbsp;
+          <span style="color: blue">papers</span>.
+        </li>
       </ul>
     </div>
   </div>
@@ -70,7 +98,7 @@
       }
     }
 
-    let listDbs = [ new dBs('paper', [ 'id', 'title', 'author', 'conference', 'year' ]), new dBs('test', [ 'x', 'y' ]) ];
+    let listDbs = [ new dBs('paper', [ 'Id', 'Title', 'Author', 'Conference', 'Year' ]), new dBs('test', [ 'X', 'Y' ]) ];
 
     $(function () {
 
@@ -101,6 +129,7 @@
       $('#parseSentence').click(function () {
         event.preventDefault();
         let sentence = $('#sentenceInput').val();
+        let startProcessingBody = false;
 
         // Sentence must start with "Write a rule to"
         if (sentence.startsWith("Write a rule to")) {
@@ -114,23 +143,29 @@
             $outputval.val(JSON.stringify(str));
 
             let nounSet = new Set();
-            nounSet.add(new nounClause(grabNoun.text().charAt(1).toUpperCase() + grabNoun.text().slice(2), 'head')); // add the found noun as a head variable
+            nounSet.add(new nounClause((grabNoun.text().charAt(1).toUpperCase() + grabNoun.text().slice(2)).replace(/[^\w\s]|_/g, "")
+              .replace(/\s+/g, " "), 'head')); // add the found noun as a head variable
 
             let endHeadParsing = false;
             sentence = sentence.replace(deleteString.text(), "");
 
             // Only if there is a having or of or from in the text should it do the rest of the head parsing 
-            if (nlp(sentence).match('* (having|of|from)').text() != "") {
+            if (nlp(sentence).match('* (having|of|from)').text() != "" || nlp(sentence).match('(having|of|from)').text() != "") {
               while (!endHeadParsing) {
                 if (sentence == "") {
                   endHeadParsing = true;
                 }
                 grabNoun = nlp(sentence).match('* [#Noun] * (having|of|from)');
-                if (grabNoun.text() != "") {
-                  deleteString = sentence.substring(0, sentence.indexOf(grabNoun.text()) + 1);
-                  str = grabNoun.out('terms');
-                  nounSet.add(new nounClause(grabNoun.text().charAt(1).toUpperCase() + grabNoun.text().slice(2), 'head'));
-                  $outputval.val($outputval.val() + ", " + JSON.stringify(str));
+                console.log(grabNoun.text());
+                grabNoun2 = nlp(sentence).match('[#Noun] * (having|of|from)');
+                console.log(grabNoun2.text());
+                if (grabNoun.text() != "" || grabNoun2.text() != "") {
+                  let grabbedNoun = grabNoun2.text() != "" ? grabNoun2 : grabNoun;
+                  deleteString = sentence.substring(0, sentence.indexOf(' ', sentence.indexOf(grabbedNoun.text()) + 1));
+                  console.log("deleteString " + deleteString);
+                  nounSet.add(new nounClause((grabbedNoun.text().charAt(1).toUpperCase() + grabbedNoun.text().slice(2)).replace(/[^\w\s]|_/g, "")
+                    .replace(/\s+/g, " "), 'head'));
+                  $outputval.val($outputval.val() + ", " + JSON.stringify(grabbedNoun.out()));
                   sentence = sentence.replace(deleteString, "");
                 }
                 else {
@@ -139,13 +174,18 @@
               }
 
               // Now the head is done being constructed, so print out the head string for the query
-              let constructedHeadString = 'query(';
+              let constructedHeadString = 'Query_Name(';
               for (let noun of nounSet) {
                 if (noun.type == "head")
                   constructedHeadString = constructedHeadString + noun.value + ", ";
               }
-              constructedHeadString = constructedHeadString.substring(0, constructedHeadString.length - 2) + ') -> ';
+              constructedHeadString = constructedHeadString.substring(0, constructedHeadString.length - 2) + ') <- ';
               $outputval.val(constructedHeadString);
+              startProcessingBody = true;
+            }
+
+            if (startProcessingBody) {
+
             }
           }
         }
