@@ -15,14 +15,15 @@
 </head>
 
 <body>
-  <p>Welcome to the DeALs shallow NLP parser.
+  <p>Welcome to the DeALs Controlled NLP parser.
   </p>
 
   <!-- Development Env. for the shallow NLP  -->
   <div class="container-fluid">
     Start the sentence with "Write a rule to ..."
     <div class="row">
-      <textarea class="form-control" id="sentenceInput" onkeyup="keyUpListener();" rows="2">Write a rule to do something here!</textarea>
+      <textarea class="form-control" id="sentenceInput" onkeyup="keyUpListener();" rows="2" placeholder="Write a rule to grab the title and author of those who have published a paper in the ACM conference
+"></textarea>
     </div>
     <br>
     <div class="row justify-content-center">
@@ -30,10 +31,10 @@
     </div>
     <br>
     <div class="row">
-      <textarea class="form-control" id="nlpOutput" rows="12">Shallow NLP output</textarea>
+      <textarea class="form-control" id="nlpOutput" rows="12" placeholder="Controlled NLP Output"></textarea>
     </div>
     <br>
-    <br> List of Databases:
+    <br> List of Valid Databases in the System:
     <div class="row">
       <ul class="list-group" id="databaseList">
       </ul>
@@ -45,22 +46,26 @@
         <li class="ruleList list-group-item d-flex justify-content-between align-items-center">
           Write a rule to &nbsp;
           <span style="color: green"> get </span> &nbsp; the &nbsp;
-          <span style="color: red">names</span> &nbsp; of authors who have published at least one&nbsp;
-          <span style="color: blue">paper</span> &nbsp;in the &nbsp;
+          <span style="color: red">names</span> &nbsp;
+          <span style="color: orange">of </span> &nbsp; authors who have published at least one&nbsp;
+          <span style="color: blue">paper</span> &nbsp;in a &nbsp;
           <span style="color: red">conference</span>&nbsp;.
         </li>
         <li class="ruleList list-group-item d-flex justify-content-between align-items-center">
           Write a rule to &nbsp;
           <span style="color: green">grab</span> &nbsp; the &nbsp;
           <span style="color: red">title</span> &nbsp; and &nbsp;
-          <span style="color: red">author</span> &nbsp; of those who have published a &nbsp;
+          <span style="color: red">author</span> &nbsp;
+          <span style="color: orange">of</span> &nbsp; those who have published a &nbsp;
           <span style="color: blue">paper</span> &nbsp;in the &nbsp;
-          <span style="color: red">ACM conference</span>.
+          <span style="color: purple">ACM</span> &nbsp;
+          <span style="color: red">conference</span>.
         </li>
         <li class="ruleList list-group-item d-flex justify-content-between align-items-center">
           Write a rule &nbsp;
           <span style="color: green">find</span> &nbsp;the&nbsp;
-          <span style="color: red">id </span> &nbsp;of authors who have published&nbsp;
+          <span style="color: red">id </span> &nbsp;
+          <span style="color: orange">of</span> &nbsp; authors who have published&nbsp;
           <span style="color: red">at least five</span>&nbsp;
           <span style="color: blue">papers</span>.
         </li>
@@ -126,6 +131,11 @@
       /*
       * Experimental NLP Code
       */
+
+      // Global Strings that will be searched
+      let startString = '(get|grab|search|find|pull|obtain|pick) * [#Noun]';
+      let startStringDelete = '(get|grab|search|find|pull|obtain|pick) * #Noun';
+
       $('#parseSentence').click(function () {
         event.preventDefault();
         let sentence = $('#sentenceInput').val();
@@ -134,8 +144,8 @@
         // Sentence must start with "Write a rule to"
         if (sentence.startsWith("Write a rule to")) {
           sentence = sentence.replace("Write a rule to", "");
-          let grabNoun = nlp(sentence).match('(get|grab|search|find|pull|obtain|pick) * [#Noun]');
-          let deleteString = nlp(sentence).match('(get|grab|search|find|pull|obtain|pick) * #Noun');
+          let grabNoun = nlp(sentence).match(startString);
+          let deleteString = nlp(sentence).match(startStringDelete);
           let $outputval = $('#nlpOutput');
           // only if there is an eligible noun should processing start
           if (grabNoun.text() != "") {
@@ -156,13 +166,13 @@
                   endHeadParsing = true;
                 }
                 grabNoun = nlp(sentence).match('* [#Noun] * (having|of|from)');
-                console.log(grabNoun.text());
+                //console.log(grabNoun.text());
                 grabNoun2 = nlp(sentence).match('[#Noun] * (having|of|from)');
-                console.log(grabNoun2.text());
+                //console.log(grabNoun2.text());
                 if (grabNoun.text() != "" || grabNoun2.text() != "") {
                   let grabbedNoun = grabNoun2.text() != "" ? grabNoun2 : grabNoun;
                   deleteString = sentence.substring(0, sentence.indexOf(' ', sentence.indexOf(grabbedNoun.text()) + 1));
-                  console.log("deleteString " + deleteString);
+                  //console.log("deleteString " + deleteString);
                   nounSet.add(new nounClause((grabbedNoun.text().charAt(1).toUpperCase() + grabbedNoun.text().slice(2)).replace(/[^\w\s]|_/g, "")
                     .replace(/\s+/g, " "), 'head'));
                   $outputval.val($outputval.val() + ", " + JSON.stringify(grabbedNoun.out()));
@@ -193,6 +203,8 @@
           alert('The sentence must start with \'Write a rule to\'');
         }
       });
+
+
 
     });
   </script>
